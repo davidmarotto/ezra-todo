@@ -1,5 +1,79 @@
 # Implementation Plan
 
+## Phases
+
+### Phase 1 — Core Backend
+Full data model, database setup, authentication, and REST API for lists and todos. Error handling included per milestone.
+
+- **1.1 Data model & database setup**
+  - Install EF Core + SQLite packages
+  - Create `User`, `TodoList`, `TodoItem`, `ListPermission` models
+  - Create `AppDbContext`
+  - Create and apply initial migration
+
+- **1.2 Auth**
+  - `POST /auth/register` — create account with hashed password
+  - `POST /auth/login` — validate credentials, return JWT
+  - JWT middleware configured in `Program.cs`
+  - All subsequent endpoints require a valid token
+
+- **1.3 Todo Lists API**
+  - `GET /lists` — lists owned by or shared with current user
+  - `POST /lists` — create a list
+  - `GET /lists/{id}` — get a single list (permission-checked)
+  - `PUT /lists/{id}` — update name (owner only)
+  - `DELETE /lists/{id}` — delete list (owner only)
+
+- **1.4 Todo Items API**
+  - `GET /lists/{listId}/todos` — list todos, optional `?status=active|completed`
+  - `POST /lists/{listId}/todos` — create todo (Editor+ only)
+  - `GET /lists/{listId}/todos/{id}` — get a single todo
+  - `PUT /lists/{listId}/todos/{id}` — update todo (Editor+ only)
+  - `DELETE /lists/{listId}/todos/{id}` — delete todo (Editor+ only)
+
+- **1.5 Tests**
+  - xUnit project setup
+  - Auth: register, login, duplicate email, invalid credentials
+  - Lists: CRUD happy paths, owner-only enforcement (403 cases)
+  - Todos: CRUD happy paths, 404 on missing list/todo, validation failures
+
+---
+
+### Phase 2 — Frontend
+Basic UI connected to the real backend.
+
+- Login and register screens
+- CORS configured on backend
+- API service layer (attaches JWT to requests)
+- List sidebar: view, create, select lists
+- Todo view: create, edit, mark complete, delete todos
+- Filter tabs: All / Active / Completed
+
+---
+
+### Phase 3 — Scheduled Reminders
+- `ReminderBackgroundService`: polls on configurable interval, queries todos due within reminder window, calls `INotificationService`
+- `INotificationService` / `NotificationService`: stub that logs to console, interface designed for SMS/email swap
+- Configurable via `appsettings.json`
+
+---
+
+### Phase 4 — Sharing
+- `POST /lists/{id}/share` — share list with a user by email + role
+- `DELETE /lists/{id}/share/{userId}` — revoke access (owner only)
+- Share modal in frontend: enter email, select Editor/Viewer role
+- Shared lists appear in recipient's list sidebar
+
+---
+
+### Phase 5 — Polish
+- Frontend loading and error states
+- Form validation feedback
+- Empty states (no lists, no todos)
+- UX cleanup and consistency pass
+
+---
+
 ## Data Model
 
 **User**
@@ -25,7 +99,7 @@
 | `Id` | `Guid` | Primary key |
 | `TodoListId` | `Guid` | FK → TodoList |
 | `UserId` | `Guid` | FK → User |
-| `Role` | `enum` | `Editor`, `Viewer` (Owner is implicit via TodoList.OwnerId) |
+| `Role` | `enum` | `Editor`, `Viewer` (Owner implicit via `TodoList.OwnerId`) |
 | `InvitedAt` | `DateTime` | When the share was created |
 
 **TodoItem**
@@ -84,46 +158,12 @@ backend/
 └── Program.cs
 ```
 
-**API Endpoints:**
-
-Auth:
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/auth/register` | Create account |
-| `POST` | `/auth/login` | Login, returns JWT |
-
-Todo Lists:
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/lists` | Get all lists the current user owns or has access to |
-| `POST` | `/lists` | Create a list |
-| `GET` | `/lists/{id}` | Get a single list |
-| `PUT` | `/lists/{id}` | Update list name (owner only) |
-| `DELETE` | `/lists/{id}` | Delete list (owner only) |
-| `POST` | `/lists/{id}/share` | Share list with a user by email + role |
-| `DELETE` | `/lists/{id}/share/{userId}` | Revoke access (owner only) |
-
-Todos (all scoped to a list, permission-checked):
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/lists/{listId}/todos` | List todos; optional `?status=active\|completed` |
-| `POST` | `/lists/{listId}/todos` | Create a todo (Editor+ only) |
-| `GET` | `/lists/{listId}/todos/{id}` | Get a single todo |
-| `PUT` | `/lists/{listId}/todos/{id}` | Update todo (Editor+ only) |
-| `DELETE` | `/lists/{listId}/todos/{id}` | Delete todo (Editor+ only) |
-
 **Permission rules:**
 - Owner: full control over list, todos, and shares
 - Editor: read + write todos; cannot manage shares or delete list
 - Viewer: read todos only
 
 **Error handling:** `ProblemDetails` responses (RFC 7807) for 400, 401, 403, 404, 500.
-
-**Reminder service:**
-- `ReminderBackgroundService` runs on a configurable interval (default: every hour)
-- Queries for todos where `DueDate` is within the reminder window (default: 24h), `IsCompleted = false`, `ReminderSentAt = null`
-- Calls `INotificationService.SendReminderAsync(todo)`
-- Sets `ReminderSentAt` to prevent re-firing
 
 ## Frontend
 
@@ -150,14 +190,6 @@ frontend/src/
 ├── App.vue
 └── main.js
 ```
-
-**UI features:**
-- Register / login screens
-- Sidebar listing all accessible todo lists
-- Selected list view with todos, filter tabs (All / Active / Completed)
-- Add/edit/delete todos with optional due date
-- Share list modal: enter email + role
-- Error and loading states throughout
 
 Vue Router and Pinia were added via `npm install vue-router pinia` and wired up in `main.js`.
 
