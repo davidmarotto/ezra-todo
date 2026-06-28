@@ -61,8 +61,7 @@ public class AuthService : IAuthService
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
-            expires: DateTime.UtcNow.AddHours(
-                double.Parse(_configuration["Jwt:ExpiryHours"]!)),
+            expires: DateTime.UtcNow.AddHours(double.Parse(_configuration["Jwt:ExpiryHours"]!)),
             claims: claims,
             signingCredentials: credentials
         );

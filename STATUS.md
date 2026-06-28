@@ -3,7 +3,7 @@
 ## Phase 1 — Core Backend
 - [x] 1.1 Data model & database setup
 - [x] 1.2 Auth
-- [ ] 1.3 Todo Lists API
+- [x] 1.3 Todo Lists API
 - [ ] 1.4 Todo Items API
 - [ ] 1.5 Tests
 
