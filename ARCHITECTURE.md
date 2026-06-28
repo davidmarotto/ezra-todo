@@ -55,3 +55,17 @@ Vue is a component-based frontend framework. The UI is built from self-contained
 **Props and events** are how components communicate — a parent passes data down to a child via props (like locals in a Rails partial), and the child emits events back up to the parent.
 
 **Reactivity** is handled automatically. Variables declared with `ref()` or `reactive()` are tracked by Vue — when they change, any part of the template that uses them re-renders.
+
+---
+
+## SQLite / Database Tools
+
+The database is a single file (`backend/todo.db`) created automatically when migrations are applied.
+
+**Command line:**
+```bash
+sqlite3 backend/todo.db
+.tables            # list all tables
+.schema Users      # show create statement for a table
+.quit              # exit
+```
