@@ -8,9 +8,9 @@
 - [ ] 1.5 Tests (deferred)
 
 ## Phase 2 — Frontend
-- [ ] Login and register screens
-- [ ] CORS configured on backend
-- [ ] API service layer
+- [x] Login and register screens
+- [x] CORS configured on backend
+- [x] API service layer
 - [ ] List sidebar
 - [ ] Todo view
 - [ ] Filter tabs
