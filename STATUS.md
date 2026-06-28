@@ -4,8 +4,8 @@
 - [x] 1.1 Data model & database setup
 - [x] 1.2 Auth
 - [x] 1.3 Todo Lists API
-- [ ] 1.4 Todo Items API
-- [ ] 1.5 Tests
+- [x] 1.4 Todo Items API
+- [ ] 1.5 Tests (deferred)
 
 ## Phase 2 — Frontend
 - [ ] Login and register screens

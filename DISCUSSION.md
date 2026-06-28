@@ -49,3 +49,23 @@ All API error responses use the IETF ProblemDetails standard rather than a custo
 ```
 
 ASP.NET Core's `[ApiController]` returns ProblemDetails automatically for 400 validation failures. We follow the same format for domain errors (409 Conflict, 401 Unauthorized, 403 Forbidden, 404 Not Found). The frontend can handle errors with a single consistent pattern regardless of which endpoint it's calling.
+
+---
+
+## Separating userId/listId from DTOs
+
+Service methods receive `userId` and `listId` as explicit parameters rather than including them in the DTO. This keeps a clear separation between trusted server-derived data (userId from the JWT, listId from the route) and untrusted client-supplied data (the request body). Including userId in the DTO would require the client to send it, opening the door to spoofing — the server should always derive the current user from the token, never trust the client to provide it.
+
+---
+
+## JWT Claims and Microservices
+
+In this app, the JWT encodes only stable identity data: `sub` (user ID) and `email`. Resource-level permissions (e.g. which lists a user can access) are checked against the database on every request.
+
+**In a microservices architecture this tradeoff shifts.** Each service is independently deployed with its own database. If Service B needs the current user's name or role, it has two options:
+- Make a network call to the User Service — adds latency, creates a runtime dependency, and is a point of failure
+- Read it from the JWT — zero network cost, works even if the User Service is temporarily down
+
+Encoding stable identity data (email, name, global role like `admin`) in the JWT is therefore a legitimate pattern in microservices — each service can authenticate and identify the user independently.
+
+**The key distinction still holds:** identity data belongs in the JWT, fine-grained resource permissions do not. Permissions change frequently and are too granular — encoding them in the token creates stale state that can only be fixed by forcing a token refresh.
