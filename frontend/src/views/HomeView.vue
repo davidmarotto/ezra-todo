@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import TodoListSidebar from '../components/TodoListSidebar.vue'
+import TodoList from '../components/TodoList.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -27,9 +28,9 @@ function logout() {
     </header>
     <main class="flex-1 flex overflow-hidden">
       <TodoListSidebar @select="selectedList = $event" />
-      <section class="flex-1 p-6">
+      <section class="flex-1 p-6 overflow-hidden flex flex-col">
         <p v-if="!selectedList" class="text-slate-400">Select a list to get started.</p>
-        <p v-else class="text-slate-700 font-semibold text-lg">{{ selectedList.name }}</p>
+        <TodoList v-else :list="selectedList" :key="selectedList.id" />
       </section>
     </main>
   </div>

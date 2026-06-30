@@ -11,9 +11,9 @@
 - [x] Login and register screens
 - [x] CORS configured on backend
 - [x] API service layer
-- [ ] List sidebar
-- [ ] Todo view
-- [ ] Filter tabs
+- [x] List sidebar
+- [x] Todo view
+- [x] Filter tabs
 
 ## Phase 3 — Scheduled Reminders
 - [ ] ReminderBackgroundService
