@@ -16,8 +16,8 @@
 - [x] Filter tabs
 
 ## Phase 3 — Scheduled Reminders
-- [ ] ReminderBackgroundService
-- [ ] INotificationService stub
+- [x] ReminderBackgroundService
+- [x] INotificationService stub
 
 ## Phase 4 — Sharing
 - [ ] Share/revoke API endpoints

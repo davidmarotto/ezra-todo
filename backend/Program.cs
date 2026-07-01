@@ -25,6 +25,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITodoListService, TodoListService>();
 builder.Services.AddScoped<ITodoService, TodoService>();
+builder.Services.Configure<ReminderSettings>(
+    builder.Configuration.GetSection("Reminders"));
+builder.Services.AddSingleton<INotificationService, NotificationService>();
+builder.Services.AddHostedService<ReminderBackgroundService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

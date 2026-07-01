@@ -14,6 +14,12 @@ The backend is written using .NET's async/await pattern throughout. All I/O-boun
 
 ---
 
+## Event-Driven Notifications (TODO: flesh out)
+
+The current reminder implementation uses a polling background service that queries the database on a fixed interval. An alternative is an event-driven approach: publish a `TodoDueSoon` event when a todo is created/updated, and have a subscriber handle the notification. This would require a message broker (RabbitMQ, Azure Service Bus, etc.) or an in-process event bus. Worth discussing as a scalability evolution — what would trigger the move from polling to events, and what tradeoffs does each approach carry?
+
+---
+
 ## Database Indexes
 
 EF Core creates several indexes automatically by convention:
