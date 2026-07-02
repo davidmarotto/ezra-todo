@@ -45,3 +45,14 @@ export const todosApi = {
   update: (listId, id, data) => request(`/lists/${listId}/todos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (listId, id) => request(`/lists/${listId}/todos/${id}`, { method: 'DELETE' })
 }
+
+export const permissionsApi = {
+  getAll: (listId) => request(`/lists/${listId}/permissions`),
+  share: (listId, email, role) =>
+    request(`/lists/${listId}/permissions`, {
+      method: 'POST',
+      body: JSON.stringify({ email, role })
+    }),
+  revoke: (listId, userId) =>
+    request(`/lists/${listId}/permissions/${userId}`, { method: 'DELETE' })
+}
