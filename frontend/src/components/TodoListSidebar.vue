@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { listsApi } from '../services/api'
 
-const emit = defineEmits(['select'])
+const emit = defineEmits(['select', 'share'])
 
 const lists = ref([])
 const selectedId = ref(null)
@@ -40,7 +40,7 @@ async function createList() {
 </script>
 
 <template>
-  <aside class="w-64 bg-white border-r border-slate-200 flex flex-col">
+  <aside class="w-64 bg-slate-100 border-r border-slate-300 flex flex-col">
     <div class="p-4 border-b border-slate-200 flex items-center justify-between">
       <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">My Lists</h2>
       <button @click="creating = !creating"
@@ -67,14 +67,36 @@ async function createList() {
     <nav class="flex-1 overflow-y-auto p-2">
       <p v-if="error" class="text-red-500 text-xs p-2">{{ error }}</p>
       <p v-else-if="lists.length === 0" class="text-slate-400 text-sm p-2">No lists yet.</p>
-      <button v-for="list in lists" :key="list.id" @click="select(list)"
-        class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between group"
-        :class="selectedId === list.id
-          ? 'bg-primary text-white'
-          : 'text-slate-700 hover:bg-slate-100'">
-        <span class="truncate">{{ list.name }}</span>
-        <span class="text-xs opacity-60 ml-2 shrink-0">{{ list.role }}</span>
-      </button>
+
+      <template v-else>
+        <div v-for="list in lists.filter(l => l.role === 'Owner')" :key="list.id"
+          @click="select(list)"
+          class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between group cursor-pointer"
+          :class="selectedId === list.id ? 'bg-primary text-white' : 'text-slate-700 hover:bg-slate-100'">
+          <span class="truncate">{{ list.name }}</span>
+          <button @click.stop="emit('share', list)"
+            class="opacity-0 group-hover:opacity-100 shrink-0 ml-2 p-0.5 rounded hover:bg-black/10 transition-opacity">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
+        </div>
+
+        <template v-if="lists.some(l => l.role !== 'Owner')">
+          <div class="flex items-center gap-2 my-2 px-1">
+            <div class="flex-1 h-px bg-slate-100"></div>
+            <span class="text-xs text-slate-400">Shared with me</span>
+            <div class="flex-1 h-px bg-slate-100"></div>
+          </div>
+          <button v-for="list in lists.filter(l => l.role !== 'Owner')" :key="list.id"
+            @click="select(list)"
+            class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between"
+            :class="selectedId === list.id ? 'bg-primary text-white' : 'text-slate-700 hover:bg-slate-100'">
+            <span class="truncate">{{ list.name }}</span>
+          </button>
+        </template>
+      </template>
     </nav>
   </aside>
 </template>

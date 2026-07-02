@@ -10,7 +10,7 @@ const emit = defineEmits(['close'])
 
 const permissions = ref([])
 const email = ref('')
-const role = ref('Editor')
+const role = 'Editor'
 const error = ref(null)
 
 onMounted(fetchPermissions)
@@ -76,12 +76,7 @@ async function revoke(userId) {
       <div class="flex gap-2">
         <input v-model="email" type="email" placeholder="Email address"
           class="flex-1 text-sm border border-slate-200 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary" />
-        <select v-model="role"
-          class="text-sm border border-slate-200 rounded px-2 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
-          <option>Editor</option>
-          <option>Viewer</option>
-        </select>
-        <button @click="share"
+<button @click="share"
           class="bg-primary text-white text-sm px-4 py-2 rounded hover:bg-primary-hover">
           Share
         </button>

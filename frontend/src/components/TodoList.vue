@@ -3,7 +3,6 @@ import { ref, watch, computed } from 'vue'
 import { todosApi } from '../services/api'
 import TodoItem from './TodoItem.vue'
 import AddTodoForm from './AddTodoForm.vue'
-import ShareModal from './ShareModal.vue'
 
 const props = defineProps({
   list: { type: Object, required: true }
@@ -13,8 +12,6 @@ const todos = ref([])
 const status = ref(null)
 const error = ref(null)
 const canEdit = ['Owner', 'Editor'].includes(props.list.role)
-const showShare = ref(false)
-const isOwner = props.list.role === 'Owner'
 
 watch(() => props.list.id, fetchTodos, { immediate: true })
 watch(status, fetchTodos)
@@ -89,10 +86,6 @@ const filters = [
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-semibold text-slate-800">{{ list.name }}</h2>
       <div class="flex gap-1">
-        <button v-if="isOwner" @click="showShare = true"
-          class="text-xs text-primary hover:text-primary-hover font-medium">
-          Share
-        </button>
         <button v-for="f in filters" :key="f.label" @click="status = f.value"
           class="text-xs px-3 py-1 rounded-full border"
           :class="status === f.value
@@ -121,6 +114,5 @@ const filters = [
         <TodoItem :todo="todo" :readonly="!canEdit" @toggle="toggleTodo" @delete="deleteTodo" />
       </template>
     </div>
-    <ShareModal v-if="showShare" :list="list" @close="showShare = false" />
   </div>
 </template>
