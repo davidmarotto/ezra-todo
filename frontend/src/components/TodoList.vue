@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { todosApi } from '../services/api'
 import TodoItem from './TodoItem.vue'
 import AddTodoForm from './AddTodoForm.vue'
@@ -60,6 +60,23 @@ async function deleteTodo(todo) {
   }
 }
 
+const sortedTodos = computed(() => {
+  const active = todos.value
+    .filter(t => !t.isCompleted)
+    .sort((a, b) => {
+      if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate)
+      if (a.dueDate) return -1
+      if (b.dueDate) return 1
+      return 0
+    })
+
+  const completed = todos.value
+    .filter(t => t.isCompleted)
+    .sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt))
+
+  return [...active, ...completed]
+})
+
 const filters = [
   { label: 'All', value: null },
   { label: 'Active', value: 'active' },
@@ -88,14 +105,21 @@ const filters = [
 
     <p v-if="error" class="text-red-500 text-sm mb-3">{{ error }}</p>
 
-    <div class="flex-1 overflow-y-auto">
-      <p v-if="todos.length === 0" class="text-slate-400 text-sm py-4">No todos here.</p>
-      <TodoItem v-for="todo in todos" :key="todo.id" :todo="todo" :readonly="!canEdit"
-        @toggle="toggleTodo" @delete="deleteTodo" />
+    <div v-if="canEdit" class="mb-4">
+      <AddTodoForm @submit="createTodo" />
     </div>
 
-    <div v-if="canEdit" class="mt-4">
-      <AddTodoForm @submit="createTodo" />
+    <div class="flex-1 overflow-y-auto">
+      <p v-if="todos.length === 0" class="text-slate-400 text-sm py-4">No todos here.</p>
+      <template v-for="(todo, index) in sortedTodos" :key="todo.id">
+        <div v-if="todo.isCompleted && !sortedTodos[index - 1]?.isCompleted"
+          class="flex items-center gap-2 my-2">
+          <div class="flex-1 h-px bg-slate-100"></div>
+          <span class="text-xs text-slate-400">Completed</span>
+          <div class="flex-1 h-px bg-slate-100"></div>
+        </div>
+        <TodoItem :todo="todo" :readonly="!canEdit" @toggle="toggleTodo" @delete="deleteTodo" />
+      </template>
     </div>
     <ShareModal v-if="showShare" :list="list" @close="showShare = false" />
   </div>
