@@ -25,6 +25,20 @@ function select(list) {
   emit('select', list)
 }
 
+async function deleteList(list) {
+  if (!confirm(`Delete "${list.name}"? This cannot be undone.`)) return
+  try {
+    await listsApi.remove(list.id)
+    lists.value = lists.value.filter(l => l.id !== list.id)
+    if (selectedId.value === list.id) {
+      selectedId.value = null
+      emit('select', null)
+    }
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 async function createList() {
   if (!newListName.value.trim()) return
   try {
@@ -74,13 +88,19 @@ async function createList() {
           class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between group cursor-pointer"
           :class="selectedId === list.id ? 'bg-primary text-white' : 'text-slate-700 hover:bg-slate-100'">
           <span class="truncate">{{ list.name }}</span>
-          <button @click.stop="emit('share', list)"
-            class="opacity-0 group-hover:opacity-100 shrink-0 ml-2 p-0.5 rounded hover:bg-black/10 transition-opacity">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-          </button>
+          <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 ml-2 transition-opacity">
+            <button @click.stop="emit('share', list)" class="p-0.5 rounded hover:bg-black/10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
+            <button @click.stop="deleteList(list)" class="p-0.5 rounded hover:bg-black/10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <template v-if="lists.some(l => l.role !== 'Owner')">

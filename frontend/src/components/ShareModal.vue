@@ -73,7 +73,7 @@ async function revoke(userId) {
       </div>
 
       <div class="flex gap-2">
-        <input v-model="email" type="email" placeholder="Email address"
+        <input v-model="email" type="email" placeholder="Email address" @keyup.enter="share"
           class="flex-1 text-sm border border-slate-200 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary" />
 <button @click="share"
           class="bg-primary text-white text-sm px-4 py-2 rounded hover:bg-primary-hover">
