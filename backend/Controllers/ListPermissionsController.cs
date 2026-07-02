@@ -27,13 +27,13 @@ public class ListPermissionsController : ControllerBase
             var response = await _permissionService.ShareListAsync(listId, GetUserId(), request);
             return Ok(response);
         }
-        catch(KeyNotFoundException ex)
+        catch (Exception ex) when (ex is KeyNotFoundException || ex is UnauthorizedAccessException)
         {
             return NotFound(new ProblemDetails { Title = ex.Message });
         }
-        catch(InvalidOperationException ex)
+        catch (InvalidOperationException ex)
         {
-            return BadRequest(new ProblemDetails { Title = ex.Message });
+            return Conflict(new ProblemDetails { Title = ex.Message });
         }
     }
 

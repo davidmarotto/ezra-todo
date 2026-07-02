@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { permissionsApi } from '../services/api'
 
 const props = defineProps({
@@ -12,7 +12,18 @@ const permissions = ref([])
 const email = ref('')
 const error = ref(null)
 
-onMounted(fetchPermissions)
+function onKeydown(e) {
+  if (e.key === 'Escape') emit('close')
+}
+
+onMounted(() => {
+  fetchPermissions()
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
 
 async function fetchPermissions() {
   try {

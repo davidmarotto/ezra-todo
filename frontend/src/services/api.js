@@ -16,7 +16,10 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ title: 'An unexpected error occurred.' }))
-    throw { status: response.status, message: error.title }
+    const message = error.errors
+      ? Object.values(error.errors).flat()[0]
+      : (error.title || 'An unexpected error occurred.')
+    throw { status: response.status, message }
   }
 
   if (response.status === 204) return null

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { todosApi } from '../services/api'
+import { todosApi, listsApi } from '../services/api'
 import TodoItem from './TodoItem.vue'
 import AddTodoForm from './AddTodoForm.vue'
 
@@ -12,6 +12,22 @@ const todos = ref([])
 const status = ref(null)
 const error = ref(null)
 const canEdit = ['Owner', 'Editor'].includes(props.list.role)
+const editingName = ref(false)
+const nameInput = ref('')
+
+async function saveListName() {
+  if (!nameInput.value.trim() || nameInput.value.trim() === props.list.name) {
+    editingName.value = false
+    return
+  }
+  try {
+    await listsApi.update(props.list.id, nameInput.value.trim())
+    props.list.name = nameInput.value.trim()
+    editingName.value = false
+  } catch (e) {
+    error.value = e.message
+  }
+}
 
 watch(() => props.list.id, fetchTodos, { immediate: true })
 watch(status, fetchTodos)
@@ -39,6 +55,20 @@ async function toggleTodo(todo) {
     const updated = await todosApi.update(props.list.id, todo.id, {
       title: todo.title,
       isCompleted: !todo.isCompleted,
+      dueDate: todo.dueDate
+    })
+    const index = todos.value.findIndex(t => t.id === todo.id)
+    todos.value[index] = updated
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
+async function renameTodo({ todo, title }) {
+  try {
+    const updated = await todosApi.update(props.list.id, todo.id, {
+      title,
+      isCompleted: todo.isCompleted,
       dueDate: todo.dueDate
     })
     const index = todos.value.findIndex(t => t.id === todo.id)
@@ -84,7 +114,14 @@ const filters = [
 <template>
   <div class="flex flex-col h-full">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-slate-800">{{ list.name }}</h2>
+      <input v-if="editingName && canEdit" v-model="nameInput"
+        @keyup.enter="saveListName" @keyup.esc="editingName = false" @blur="saveListName"
+        class="text-lg font-semibold text-slate-800 bg-transparent border-b border-primary focus:outline-none" />
+      <h2 v-else class="text-lg font-semibold text-slate-800"
+        :class="{ 'cursor-pointer hover:text-primary': canEdit }"
+        @click="canEdit && (editingName = true, nameInput = props.list.name)">
+        {{ list.name }}
+      </h2>
       <div class="flex gap-1">
         <button v-for="f in filters" :key="f.label" @click="status = f.value"
           class="text-xs px-3 py-1 rounded-full border"
@@ -111,7 +148,7 @@ const filters = [
           <span class="text-xs text-slate-400">Completed</span>
           <div class="flex-1 h-px bg-slate-100"></div>
         </div>
-        <TodoItem :todo="todo" :readonly="!canEdit" @toggle="toggleTodo" @delete="deleteTodo" />
+        <TodoItem :todo="todo" :readonly="!canEdit" @toggle="toggleTodo" @delete="deleteTodo" @rename="renameTodo" />
       </template>
     </div>
   </div>

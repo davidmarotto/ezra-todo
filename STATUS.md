@@ -21,10 +21,10 @@
 
 ## Phase 4 — Sharing
 - [x] Share/revoke API endpoints
-- [ ] Share modal in frontend
+- [x] Share modal in frontend
 
 ## Phase 5 — Polish
-- [ ] Loading and error states
-- [ ] Form validation feedback
-- [ ] Empty states
-- [ ] UX cleanup
+- [x] Loading and error states (skipped — app is fast enough)
+- [x] Form validation feedback
+- [x] Empty states
+- [x] UX cleanup
