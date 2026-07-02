@@ -48,10 +48,10 @@ export const todosApi = {
 
 export const permissionsApi = {
   getAll: (listId) => request(`/lists/${listId}/permissions`),
-  share: (listId, email, role) =>
+  share: (listId, email) =>
     request(`/lists/${listId}/permissions`, {
       method: 'POST',
-      body: JSON.stringify({ email, role })
+      body: JSON.stringify({ email, role: 'Editor' })
     }),
   revoke: (listId, userId) =>
     request(`/lists/${listId}/permissions/${userId}`, { method: 'DELETE' })

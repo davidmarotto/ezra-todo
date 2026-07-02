@@ -28,17 +28,19 @@ public class TodoListService : ITodoListService
             })
             .ToListAsync();
 
-        var shared = await _context.ListPermissions
+        var sharedPermissions = await _context.ListPermissions
             .Where(lp => lp.UserId == userId)
-            .Select(lp => new TodoListResponse
-            {
-                Id = lp.TodoList.Id,
-                Name = lp.TodoList.Name,
-                Role = lp.Role.ToString(),
-                CreatedAt = lp.TodoList.CreatedAt,
-                UpdatedAt = lp.TodoList.UpdatedAt
-            })
+            .Include(lp => lp.TodoList)
             .ToListAsync();
+
+        var shared = sharedPermissions.Select(lp => new TodoListResponse
+        {
+            Id = lp.TodoList.Id,
+            Name = lp.TodoList.Name,
+            Role = lp.Role.ToString(),
+            CreatedAt = lp.TodoList.CreatedAt,
+            UpdatedAt = lp.TodoList.UpdatedAt
+        });
 
         return owned.Concat(shared);
     }

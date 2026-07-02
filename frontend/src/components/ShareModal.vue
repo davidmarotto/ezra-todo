@@ -10,7 +10,6 @@ const emit = defineEmits(['close'])
 
 const permissions = ref([])
 const email = ref('')
-const role = 'Editor'
 const error = ref(null)
 
 onMounted(fetchPermissions)
@@ -27,7 +26,7 @@ async function fetchPermissions() {
 async function share() {
   if (!email.value.trim()) return
   try {
-    const permission = await permissionsApi.share(props.list.id, email.value.trim(), role.value)
+    const permission = await permissionsApi.share(props.list.id, email.value.trim())
     permissions.value.push(permission)
     email.value = ''
     error.value = null
