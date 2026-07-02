@@ -20,7 +20,7 @@
 - [x] INotificationService stub
 
 ## Phase 4 — Sharing
-- [ ] Share/revoke API endpoints
+- [x] Share/revoke API endpoints
 - [ ] Share modal in frontend
 
 ## Phase 5 — Polish
