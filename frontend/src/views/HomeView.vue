@@ -20,7 +20,7 @@ function logout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <header class="bg-slate-700 px-6 py-3 flex items-center justify-between">
-      <span class="font-bold text-white tracking-tight text-lg">Marottodo</span>
+      <span class="font-bold text-white tracking-tight text-lg">David Marotto: Todo</span>
       <div class="flex items-center gap-4">
         <span class="text-sm text-slate-400">{{ auth.user?.email }}</span>
         <button @click="logout" class="text-sm text-slate-300 hover:text-white font-medium">
