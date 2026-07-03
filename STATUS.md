@@ -5,7 +5,10 @@
 - [x] 1.2 Auth
 - [x] 1.3 Todo Lists API
 - [x] 1.4 Todo Items API
-- [ ] 1.5 Tests (deferred)
+- [x] 1.5 Tests
+  - [x] AuthService unit tests (register/login happy and error paths)
+  - [x] TodoListService integration tests (permission logic — own lists, shared lists, non-owner delete)
+  - [x] TodosController integration tests (401 unauthenticated, 200 valid JWT, 404 wrong user's list)
 
 ## Phase 2 — Frontend
 - [x] Login and register screens
