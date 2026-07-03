@@ -1,4 +1,4 @@
-# Todo App
+# David Marotto: Todo
 
 A multi-user todo list web application with a Vue 3 frontend and ASP.NET Core REST API backend.
 
@@ -97,9 +97,30 @@ A more scalable approach is event-driven: when a todo is created or updated with
 
 An alternative (maybe simpler) approach would be to use an in-memory sorted set (eg Redis ZSET). In response to the `TodoScheduled` event we push the item onto the set sorted descending by duedate timestamp. NotificationService instances pop items off the set and process them.
 
+## Testing
+
+Tests live in `backend.tests/` and use xUnit with EF Core's in-memory provider for unit/service tests, and `WebApplicationFactory` for controller integration tests.
+
+**AuthServiceTests** — unit tests covering the register and login flows: successful registration, duplicate email rejection, valid login, wrong password, and unknown email. Uses an isolated in-memory database per test.
+
+**TodoListServiceTests** — service-layer tests covering permission logic: owned lists are returned, shared lists appear with the correct role, unrelated lists are invisible, non-owners cannot delete, and accessing an inaccessible list throws `KeyNotFoundException`.
+
+**TodosControllerTests** — full HTTP pipeline tests using a real test host. Replaces the production SQLite database with a SQLite in-memory connection and overrides the JWT signing key so test-generated tokens are accepted. Covers: 401 with no token, 200 with a valid token, and 404 when accessing another user's list.
+
+```bash
+cd backend.tests
+dotnet test
+```
+
+**Tests not yet written**
+- *Frontend API service* — unit tests for `api.js` covering request construction, error parsing, and the structured `{ status, message }` error shape. Would use `vi.mock` (Vitest) to stub `fetch`.
+- *ReminderBackgroundService* — tests using factory-seeded data to verify: items due within the lead window are picked up, already-notified items (`ReminderSentAt != null`) are skipped, and completed items are ignored.
+
+I'm not a huge fan of front-end view/component unit tests but we could consider adding these also.
+
 ## Error Handling
 
-All error responses use ProblemDetails, giving a consistent shape across all endpoints:
+Error responses use `ProblemDetails`, giving a consistent shape across all endpoints:
 
 ```json
 { "title": "No user found with that email.", "status": 404 }
