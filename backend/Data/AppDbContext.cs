@@ -21,5 +21,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ListPermission>()
             .HasIndex(lp => new { lp.TodoListId, lp.UserId })
             .IsUnique();
+
+        modelBuilder.Entity<TodoItem>()
+            .HasIndex(t => new { t.DueDate, t.ReminderSentAt, t.IsCompleted })
+            .HasDatabaseName("IX_TodoItems_Reminders");
     }
 }
