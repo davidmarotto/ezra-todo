@@ -5,14 +5,14 @@ A multi-user todo list web application with a Vue 3 frontend and ASP.NET Core RE
 ## Prerequisites
 
 - [.NET 10 SDK](https://dot.net)
-- [Node.js](https://nodejs.org) (v18+)
-- [dotnet-ef CLI tool](https://learn.microsoft.com/en-us/ef/core/cli/dotnet): `dotnet tool install --global dotnet-ef`
+- [Node.js](https://nodejs.org) (v22+)
 
 ## Running the Backend
 
 ```bash
 cd backend
-dotnet ef database update   # creates todo.db on first run
+dotnet tool restore          # installs dotnet-ef local tool (first time only)
+dotnet ef database update    # creates todo.db (first time only)
 dotnet run
 ```
 
@@ -27,6 +27,13 @@ npm run dev
 ```
 
 App available at `http://localhost:5173`
+
+## Running the Tests
+
+```bash
+cd backend.tests
+dotnet test
+```
 
 
 ## Features
