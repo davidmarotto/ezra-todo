@@ -36,7 +36,6 @@ cd backend.tests
 dotnet test
 ```
 
-
 ## Features
 
 **Authentication**
@@ -60,87 +59,37 @@ dotnet test
 - Sends reminders via a stub notification service (logs to console)
 - Interface designed for swap-in with a real email/SMS provider (e.g. SendGrid, Twilio)
 
-## Assumptions
-- No server side rendering. Juice not worth the squeeze here since there's no need for SEO on private/authenticated lists
+## Data Model
 
-## Future Improvements
-- Responsive design/mobile web
-- Native mobile built on top of the same backend API
-- Integrate with email/SMS provider for reminder notifications (currently stubbed to logs)
-- Email verification on registration and password reset flow
-- Support sharing to users who don't yet have an account via email invitations
-- Searching across lists
-- Pagination on list/todo endpoints
-- Alternate authentication methods (OAuth / Social login)
+**`Users`**
+- `id` — UUID primary key
+- `email`
+- `passwordHash` — BCrypt hash
+- `createdAt`
 
-## Scalability
+**`TodoLists`**
+- `id` — UUID primary key
+- `name`
+- `ownerId` — FK  to Users
+- `createdAt`, `updatedAt`
 
-**Horizontal Scaling**
-The backend API is stateless — auth is JWT-based with no server-side session, so instances can be easily be scaled horizontally behind a load balancer. We can autoscale the primary service based on http request response time and latency. 
+**`TodoItems`**
+- `id` — UUID primary key
+- `todoListId` — FK to TodoLists
+- `title`
+- `isCompleted`
+- `dueDate` — optional, used for background service reminder notifications
+- `reminderSentAt` — set when a reminder is sent; prevents duplicate sends on subsequent poll cycles
+- `createdAt`, `updatedAt`
 
-**Database Indexes**
-EF Core creates primary key and foreign key indexes automatically by convention. We additionally define:
+**`ListPermissions`**
+- `id` — UUID primary key
+- `todoListId` — FK to TodoLists
+- `userId` — FK to Users
+- `role` — Future consideration
+- `invitedAt`
 
-- **`Users.Email`** unique index enforces uniqueness at the database level and makes login lookups fast
-- **`ListPermissions(TodoListId, UserId)`** unique composite index prevents duplicate shares and makes permission checks fast when determining whether a user can access a list
-- **`TodoItems(DueDate, ReminderSentAt, IsCompleted)`** composite index makes the reminder polling query efficient; without this, every poll cycle would do a full table scan on `TodoItems`
-
-The FK index on `TodoItems.TodoListId` is critical since fetching all todos for a given list is the most frequent query.
-
-**Pagination**
-List and todo endpoints return all records — acceptable at MVP scale but would require cursor or offset pagination as data grows.
-
-**Database**
-A single relational database becomes a write bottleneck at high scale. As the scale of the system grows I'd recommend the following scalability improvements:
-- enable read replicas (most traffic is reads)
-- vertical scaling to increase the CPU and number of connections supported by the database
-- implement a caching layer (eg, Redis) for hot data.
-
-If this becomes the most popular Todo app in the world we may need to consider sharding but this introduces quite a bit of complexity. Sharding on `userId` is the natural choice — a user's lists and todos stay co-located on one shard. Shared lists complicate this since they may reside on a different shard but we could work around this through denormalizing or by keeping a global unsharded permissions table for cross-shard lookups.
-
-**Reminder Notifications**
-The current polling approach scans the `TodoItems` table on a fixed interval. At scale this becomes expensive, and running multiple backend instances would cause duplicate reminders without clever locking.
-
-A more scalable approach is event-driven: when a todo is created or updated with a due date, publish a `TodoScheduled` event. A consumer schedules the reminder to fire at `dueDate - leadTime` without any polling. Message brokers (eg, Azure or Kafka) should support this. This approach also decouples reminder delivery from the main API, allowing each to scale independently based on queue size or duration.
-
-An alternative (maybe simpler) approach would be to use an in-memory sorted set (eg Redis ZSET). In response to the `TodoScheduled` event we push the item onto the set sorted descending by duedate timestamp. NotificationService instances pop items off the set and process them.
-
-## Testing
-
-Tests live in `backend.tests/` and use xUnit with EF Core's in-memory provider for unit/service tests, and `WebApplicationFactory` for controller integration tests.
-
-**AuthServiceTests** — unit tests covering the register and login flows: successful registration, duplicate email rejection, valid login, wrong password, and unknown email. Uses an isolated in-memory database per test.
-
-**TodoListServiceTests** — service-layer tests covering permission logic: owned lists are returned, shared lists appear with the correct role, unrelated lists are invisible, non-owners cannot delete, and accessing an inaccessible list throws `KeyNotFoundException`.
-
-**TodosControllerTests** — full HTTP pipeline tests using a real test host. Replaces the production SQLite database with a SQLite in-memory connection and overrides the JWT signing key so test-generated tokens are accepted. Covers: 401 with no token, 200 with a valid token, and 404 when accessing another user's list.
-
-```bash
-cd backend.tests
-dotnet test
-```
-
-**Tests not yet written**
-- *Frontend API service* — unit tests for `api.js` covering request construction, error parsing, and the structured `{ status, message }` error shape. Would use `vi.mock` (Vitest) to stub `fetch`.
-- *ReminderBackgroundService* — tests using factory-seeded data to verify: items due within the lead window are picked up, already-notified items (`ReminderSentAt != null`) are skipped, and completed items are ignored.
-
-I'm not a huge fan of front-end view/component unit tests but we could consider adding these also.
-
-## Error Handling
-
-Error responses use `ProblemDetails`, giving a consistent shape across all endpoints:
-
-```json
-{ "title": "No user found with that email.", "status": 404 }
-```
-
-Validation errors (missing fields, wrong types) is handled automatically by `[ApiController]`. Domain errors from the service layer are mapped to appropriate HTTP status codes (eg, `KeyNotFoundException` to 404, `InvalidOperationException` to 409). Unauthorized access returns 404 rather than 403 to avoid leaking resource existence.
-
-**Database constraints**
-Unique constraints are enforced at both the application and database level — for example, duplicate email registration is caught in the service layer before hitting the database, but the unique index on `Users.Email` acts as a safety net. EF surfaces constraint violations as exceptions which are caught and mapped to appropriate response codes.
-
-**Frontend error handling**
-The `api.js` service layer catches all non-2xx responses and throws a structured `{ status, message }` error. Components catch these and display the message inline near the relevant form or action. Unhandled exceptions (eg, network failure) surface as a generic "An unexpected error occurred."
+More details about indexes in Scalability section.
 
 ## API Design
 
@@ -185,3 +134,79 @@ The app is split into two independently projects:
 4. Backend JWT middleware validates the token on every protected endpoint
 5. The token encodes the user's ID and email, which controllers extract to identify the requesting user without an additional database lookup. Note: in a larger microservices environment we may want to encode additional permission details in the JWT to avoid repeated lookups in each service.
 
+## Error Handling
+
+Error responses use `ProblemDetails`, giving a consistent shape across all endpoints:
+
+```json
+{ "title": "No user found with that email.", "status": 404 }
+```
+
+Validation errors (missing fields, wrong types) is handled automatically by `[ApiController]`. Domain errors from the service layer are mapped to appropriate HTTP status codes (eg, `KeyNotFoundException` to 404, `InvalidOperationException` to 409). Unauthorized access returns 404 rather than 403 to avoid leaking resource existence.
+
+**Database constraints**
+Unique constraints are enforced at both the application and database level — for example, duplicate email registration is caught in the service layer before hitting the database, but the unique index on `Users.Email` acts as a safety net. EF surfaces constraint violations as exceptions which are caught and mapped to appropriate response codes.
+
+**Frontend error handling**
+The `api.js` service layer catches all non-2xx responses and throws a structured `{ status, message }` error. Components catch these and display the message inline near the relevant form or action. Unhandled exceptions (eg, network failure) surface as a generic "An unexpected error occurred."
+
+## Testing
+
+Tests live in `backend.tests/` and use xUnit with EF Core's in-memory provider for unit/service tests, and `WebApplicationFactory` for controller integration tests.
+
+**AuthServiceTests** — unit tests covering the register and login flows: successful registration, duplicate email rejection, valid login, wrong password, and unknown email. Uses an isolated in-memory database per test.
+
+**TodoListServiceTests** — service-layer tests covering permission logic: owned lists are returned, shared lists appear with the correct role, unrelated lists are invisible, non-owners cannot delete, and accessing an inaccessible list throws `KeyNotFoundException`.
+
+**TodosControllerTests** — full HTTP pipeline tests using a real test host. Replaces the production SQLite database with a SQLite in-memory connection and overrides the JWT signing key so test-generated tokens are accepted. Covers: 401 with no token, 200 with a valid token, and 404 when accessing another user's list.
+
+**Tests not yet written**
+- *Frontend API service* — unit tests for `api.js` covering request construction, error parsing, and the structured `{ status, message }` error shape. Would use `vi.mock` (Vitest) to stub `fetch`.
+- *ReminderBackgroundService* — tests using factory-seeded data to verify: items due within the lead window are picked up, already-notified items (`ReminderSentAt != null`) are skipped, and completed items are ignored.
+
+I'm not a huge fan of front-end view/component unit tests but we could consider adding these also.
+
+## Scalability
+
+**Horizontal Scaling**
+The backend API is stateless — auth is JWT-based with no server-side session, so instances can be easily be scaled horizontally behind a load balancer. We can autoscale the primary service based on http request response time and latency. 
+
+**Database Indexes**
+EF Core creates primary key and foreign key indexes automatically by convention. We additionally define:
+
+- **`Users.Email`** unique index enforces uniqueness at the database level and makes login lookups fast
+- **`ListPermissions(TodoListId, UserId)`** unique composite index prevents duplicate shares and makes permission checks fast when determining whether a user can access a list
+- **`TodoItems(DueDate, ReminderSentAt, IsCompleted)`** composite index makes the reminder polling query efficient; without this, every poll cycle would do a full table scan on `TodoItems`
+
+The FK index on `TodoItems.TodoListId` is critical since fetching all todos for a given list is the most frequent query.
+
+**Pagination**
+List and todo endpoints return all records — acceptable at MVP scale but would require cursor or offset pagination as data grows.
+
+**Database**
+A single relational database becomes a write bottleneck at high scale. As the scale of the system grows I'd recommend the following scalability improvements:
+- enable read replicas (most traffic is reads)
+- vertical scaling to increase the CPU and number of connections supported by the database
+- implement a caching layer (eg, Redis) for hot data.
+
+If this becomes the most popular Todo app in the world we may need to consider sharding but this introduces quite a bit of complexity. Sharding on `userId` is the natural choice — a user's lists and todos stay co-located on one shard. Shared lists complicate this since they may reside on a different shard but we could work around this through denormalizing or by keeping a global unsharded permissions table for cross-shard lookups.
+
+**Reminder Notifications**
+The current polling approach scans the `TodoItems` table on a fixed interval. At scale this becomes expensive, and running multiple backend instances would cause duplicate reminders without clever locking.
+
+A more scalable approach is event-driven: when a todo is created or updated with a due date, publish a `TodoScheduled` event. A consumer schedules the reminder to fire at `dueDate - leadTime` without any polling. Message brokers (eg, Azure or Kafka) should support this. This approach also decouples reminder delivery from the main API, allowing each to scale independently based on queue size or duration.
+
+An alternative (maybe simpler) approach would be to use an in-memory sorted set (eg Redis ZSET). In response to the `TodoScheduled` event we push the item onto the set sorted descending by duedate timestamp. NotificationService instances pop items off the set and process them.
+
+## Assumptions
+- No server side rendering. Juice not worth the squeeze here since there's no need for SEO on private/authenticated lists
+
+## Future Improvements
+- Responsive design/mobile web
+- Native mobile built on top of the same backend API
+- Integrate with email/SMS provider for reminder notifications (currently stubbed to logs)
+- Email verification on registration and password reset flow
+- Support sharing to users who don't yet have an account via email invitations
+- Searching across lists
+- Pagination on list/todo endpoints
+- Alternate authentication methods (OAuth / Social login)
