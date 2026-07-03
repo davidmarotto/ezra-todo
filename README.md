@@ -12,6 +12,7 @@ A multi-user todo list web application with a Vue 3 frontend and ASP.NET Core RE
 ```bash
 cd backend
 dotnet tool restore          # installs dotnet-ef local tool (first time only)
+dotnet restore               # restores NuGet packages (required before dotnet ef)
 dotnet ef database update    # creates todo.db (first time only)
 dotnet run
 ```
